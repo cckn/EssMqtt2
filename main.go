@@ -1,60 +1,10 @@
 package main
 
 import (
-	"encoding/csv"
-	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"log"
+	"EssMqtt/Library"
 	"os"
 	"sync"
-	"time"
 )
-
-func Connect(clientId string, uri string) mqtt.Client {
-	opts := createClientOptions(clientId, uri)
-	client := mqtt.NewClient(opts)
-	token := client.Connect()
-	for !token.WaitTimeout(time.Nanosecond / 999999) {
-	}
-	if err := token.Error(); err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
-
-func createClientOptions(clientId string, uri string) *mqtt.ClientOptions {
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(uri)
-	opts.SetClientID(clientId)
-	return opts
-}
-
-func listen(wg *sync.WaitGroup, uri, topic string, client mqtt.Client, file os.File) {
-	//client := connect("sub", uri)
-	for {
-		client.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
-			writeToCsv(file, string(msg.Payload()))
-		})
-	}
-}
-
-//func Publish(wg *sync.WaitGroup, client mqtt.Client, topic string) {
-//
-//	for {
-//		client.Publish(topic, 1, false, "HanGang")
-//		time.Sleep(time.Second * 2)
-//
-//	}
-//}
-
-func writeToCsv(file os.File, msg string) {
-	writer := csv.NewWriter(&file)
-	defer writer.Flush()
-	record := []string{time.Now().String(), msg}
-	fmt.Println(record)
-	writer.Write(record)
-
-}
 
 func main() {
 	var wg sync.WaitGroup
@@ -75,12 +25,10 @@ func main() {
 	defer file.Close()
 
 	println("@@MQTTPublish Start@@")
-	client := Connect("aassdd", uri)
+	client := Library.Connect("aassdd", uri)
 
-	wg.Add(2)
-
-	go listen(&wg, uri, topic, client, *file)
+	wg.Add(1)
+	go Library.Listen(&wg, uri, topic, client, *file)
 	//	go Publish(&wg, client, topic)
-
 	wg.Wait()
 }
